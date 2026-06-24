@@ -66,7 +66,7 @@ class EventDetector:
         self._last_lunge_time = 0.0
         self._last_impact_time = 0.0
         self._last_fr_time = 0.0
-        self._impact_timestamp = 0.0  # When the last impact was detected
+        self._impact_timestamp = -999.0  # When the last impact was detected
         self._fr_posture_start = 0.0  # When asymmetric posture started
         self._fr_posture_active = False
         self._prev_wrist_pos = None

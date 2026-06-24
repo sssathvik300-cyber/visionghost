@@ -4,12 +4,14 @@ WORKDIR /app
 
 # Copy necessary files for build
 COPY gateway/build.gradle.kts gateway/settings.gradle.kts /app/gateway/
+COPY gateway/gradlew /app/gateway/gradlew
+COPY gateway/gradle /app/gateway/gradle
 COPY proto /app/proto
 COPY gateway/src /app/gateway/src
 
 # Run gradle build excluding tests
 WORKDIR /app/gateway
-RUN gradle build -x test
+RUN chmod +x gradlew && ./gradlew build -x test
 
 # Run stage
 FROM eclipse-temurin:17-jre-jammy

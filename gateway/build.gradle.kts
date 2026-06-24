@@ -38,6 +38,9 @@ dependencies {
 
     // Jakarta annotation (for gRPC generated code)
     implementation("jakarta.annotation:jakarta.annotation-api:2.1.1")
+    // javax.annotation shim — gRPC codegen emits @javax.annotation.Generated
+    // which Jakarta does not provide (Spring Boot 3 uses jakarta.* namespace)
+    implementation("javax.annotation:javax.annotation-api:1.3.2")
 
     // Apache Tika for magic byte detection
     implementation("org.apache.tika:tika-core:2.9.2")

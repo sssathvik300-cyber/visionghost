@@ -1,0 +1,26 @@
+# Windows venv — won't work in Linux container, just bloats context
+cv-worker/venv/
+
+# Gradle distribution unpacked locally — not needed in Docker
+gradle-8.5/
+gradle.zip
+
+# Gradle caches
+gateway/.gradle/
+.gradle/
+
+# Python bytecode
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# IDE
+.vscode/
+.claude/
+
+# Git
+.git/
+.gitignore
+
+# Local gRPC generated files
+

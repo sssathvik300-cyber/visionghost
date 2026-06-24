@@ -22,6 +22,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(videoStreamHandler, "/ws")
-                .setAllowedOrigins("http://127.0.0.1:*", "http://localhost:*");
+                .setAllowedOriginPatterns("http://127.0.0.1:*", "http://localhost:*");
     }
 }

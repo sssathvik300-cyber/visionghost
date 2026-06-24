@@ -47,6 +47,3 @@ docker-compose.override.yml
 # Logs
 *.log
 logs/
-
-# Large binaries
-*.zip

@@ -136,46 +136,48 @@ public class VideoStreamHandler extends AbstractWebSocketHandler {
 
     private void handleFrame(WebSocketSession session, FrameData frameData,
                                String trackingSessionId) {
-        try {
-            if (!session.isOpen()) return;
+        synchronized (session) {
+            try {
+                if (!session.isOpen()) return;
 
-            // Send annotated JPEG frame as binary
-            if (!frameData.getJpegFrame().isEmpty()) {
-                session.sendMessage(new BinaryMessage(
-                        frameData.getJpegFrame().toByteArray()));
+                // Send annotated JPEG frame as binary
+                if (!frameData.getJpegFrame().isEmpty()) {
+                    session.sendMessage(new BinaryMessage(
+                            frameData.getJpegFrame().toByteArray()));
+                }
+
+                // Send metrics as JSON text
+                if (!frameData.getMetricsJson().isEmpty()) {
+                    session.sendMessage(new TextMessage(
+                            "{\"type\":\"metrics\",\"data\":" +
+                            frameData.getMetricsJson() +
+                            ",\"frameId\":" + frameData.getFrameId() +
+                            ",\"fps\":" + String.format("%.1f", frameData.getFps()) + "}"));
+                }
+
+                // Send events as JSON text + store them
+                if (!frameData.getEventsJson().isEmpty() &&
+                    !frameData.getEventsJson().equals("[]")) {
+                    session.sendMessage(new TextMessage(
+                            "{\"type\":\"events\",\"data\":" +
+                            frameData.getEventsJson() + "}"));
+
+                    // Parse and store events
+                    storeEvents(trackingSessionId, frameData);
+                }
+
+                // Send inset frame periodically (every 3rd frame to save bandwidth)
+                if (frameData.getFrameId() % 3 == 0 &&
+                    !frameData.getInsetFrame().isEmpty()) {
+                    session.sendMessage(new TextMessage(
+                            "{\"type\":\"inset\",\"frameId\":" + frameData.getFrameId() + "}"));
+                    session.sendMessage(new BinaryMessage(
+                            frameData.getInsetFrame().toByteArray()));
+                }
+
+            } catch (IOException e) {
+                log.warn("Failed to send frame to WS {}: {}", session.getId(), e.getMessage());
             }
-
-            // Send metrics as JSON text
-            if (!frameData.getMetricsJson().isEmpty()) {
-                session.sendMessage(new TextMessage(
-                        "{\"type\":\"metrics\",\"data\":" +
-                        frameData.getMetricsJson() +
-                        ",\"frameId\":" + frameData.getFrameId() +
-                        ",\"fps\":" + String.format("%.1f", frameData.getFps()) + "}"));
-            }
-
-            // Send events as JSON text + store them
-            if (!frameData.getEventsJson().isEmpty() &&
-                !frameData.getEventsJson().equals("[]")) {
-                session.sendMessage(new TextMessage(
-                        "{\"type\":\"events\",\"data\":" +
-                        frameData.getEventsJson() + "}"));
-
-                // Parse and store events
-                storeEvents(trackingSessionId, frameData);
-            }
-
-            // Send inset frame periodically (every 3rd frame to save bandwidth)
-            if (frameData.getFrameId() % 3 == 0 &&
-                !frameData.getInsetFrame().isEmpty()) {
-                session.sendMessage(new TextMessage(
-                        "{\"type\":\"inset\",\"frameId\":" + frameData.getFrameId() + "}"));
-                session.sendMessage(new BinaryMessage(
-                        frameData.getInsetFrame().toByteArray()));
-            }
-
-        } catch (IOException e) {
-            log.warn("Failed to send frame to WS {}: {}", session.getId(), e.getMessage());
         }
     }
 

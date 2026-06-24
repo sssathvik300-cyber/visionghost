@@ -132,7 +132,7 @@ def serve():
     
     # Read from environment first (for Docker), fallback to config, then 127.0.0.1
     host = os.environ.get('FENCEGUARD_GRPC_HOST', grpc_cfg.get('host', '127.0.0.1'))
-    port = grpc_cfg.get('port', 50051)
+    port = int(os.environ.get('FENCEGUARD_GRPC_PORT', grpc_cfg.get('port', 50051)))
 
     # Internal token from environment
     internal_token = os.environ.get(
