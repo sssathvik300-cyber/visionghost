@@ -1,0 +1,21 @@
+# FenceGuard Lite — Python CV Worker Dependencies
+# Unpinned for compatibility with newer Python versions
+
+# gRPC
+grpcio
+grpcio-tools
+protobuf
+
+# Computer Vision
+ultralytics
+mediapipe
+opencv-python-headless
+
+# Numeric (mediapipe often has issues with numpy 2.0+)
+numpy<2.0.0
+
+# Configuration
+pyyaml
+
+# Utilities
+Pillow

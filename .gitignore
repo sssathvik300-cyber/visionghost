@@ -1,61 +1,52 @@
-# Dependencies
-node_modules/
-vendor/
-.venv/
-venv/
-__pycache__/
-*.pyc
-
-# Build outputs
-dist/
-build/
-out/
-target/
+# Java / Gradle
+gateway/build/
+gateway/.gradle/
+gateway/bin/
+*.class
 *.jar
 *.war
-*.class
 
-# IDE / Editor
+# Python
+cv-worker/__pycache__/
+cv-worker/**/__pycache__/
+cv-worker/*.pyc
+cv-worker/venv/
+cv-worker/.venv/
+cv-worker/generated/
+*.egg-info/
+
+# Models (auto-downloaded)
+*.pt
+*.onnx
+*.tflite
+pose_landmarker*.task
+
+# Environment / secrets
+.env
+*.env.local
+
+# Uploads
+gateway/uploads/
+cv-worker/uploads/
+
+# IDE
 .idea/
 .vscode/
+*.iml
 *.swp
-*.swo
 *~
-.project
-.classpath
-.settings/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Environment / Secrets
-.env
-.env.local
-.env.*.local
-*.pem
-*.key
+# Docker
+docker-compose.override.yml
 
 # Logs
 *.log
 logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# Package manager
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-# Coverage / Testing
-coverage/
-.nyc_output/
-htmlcov/
-.pytest_cache/
-
-# Misc
-*.tmp
-*.bak
-*.orig
+# Large binaries
+*.zip

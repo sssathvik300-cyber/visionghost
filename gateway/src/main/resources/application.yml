@@ -1,0 +1,37 @@
+server:
+  address: ${FENCEGUARD_HOST:127.0.0.1}
+  port: ${FENCEGUARD_PORT:8080}
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: ${FENCEGUARD_MAX_UPLOAD_MB:200}MB
+      max-request-size: ${FENCEGUARD_MAX_UPLOAD_MB:200}MB
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  main:
+    banner-mode: off
+
+fenceguard:
+  api-key: ${FENCEGUARD_API_KEY:changeme-generate-a-strong-random-key}
+  internal-token: ${FENCEGUARD_INTERNAL_TOKEN:changeme-internal-grpc-token}
+  host: ${FENCEGUARD_HOST:127.0.0.1}
+  port: ${FENCEGUARD_PORT:8080}
+  grpc:
+    host: ${FENCEGUARD_GRPC_HOST:127.0.0.1}
+    port: ${FENCEGUARD_GRPC_PORT:50051}
+  upload:
+    max-size-mb: ${FENCEGUARD_MAX_UPLOAD_MB:200}
+    allowed-extensions:
+      - .mp4
+      - .mov
+      - .avi
+      - .mkv
+
+logging:
+  level:
+    com.fenceguard: INFO
+    org.springframework.security: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{requestId}] - %msg%n"

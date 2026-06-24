@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package fenceguard;
+
+option java_multiple_files = true;
+option java_package = "com.fenceguard.grpc";
+option java_outer_classname = "FenceGuardProto";
+
+// CV Worker service — localhost only, internal token auth
+service CvWorker {
+  // Stream processed frames + events for a session
+  rpc StreamSession(SessionConfig) returns (stream FrameData);
+  // Stop an active session
+  rpc StopSession(StopRequest) returns (StopResponse);
+}
+
+message SessionConfig {
+  string source = 1;           // "webcam" or absolute file path
+  string internal_token = 2;   // Internal auth token (from env)
+  string session_id = 3;       // Unique session identifier
+}
+
+message FrameData {
+  bytes jpeg_frame = 1;        // Annotated JPEG — PTZ broadcast view + skeleton overlay
+  bytes inset_frame = 2;       // Full-frame JPEG with crop rectangle drawn
+  string metrics_json = 3;     // Biomechanics: joint angles, head speed, torso lean
+  string events_json = 4;      // Detected events (lunge, impact, fencing response)
+  int64 frame_id = 5;          // Sequential frame counter
+  double timestamp = 6;        // Unix timestamp (seconds)
+  double fps = 7;              // Current processing FPS
+}
+
+message StopRequest {
+  string session_id = 1;
+}
+
+message StopResponse {
+  bool success = 1;
+  string message = 2;
+}

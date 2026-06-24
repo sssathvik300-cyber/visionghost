@@ -1,0 +1,51 @@
+# FenceGuard Lite — CV Worker Configuration
+# All thresholds are tunable without code changes
+
+camera:
+  default_source: "webcam"  # "webcam" or path to video file
+  frame_width: 640          # Downscale width for performance
+  fps_cap: 30               # Max processing FPS
+  jpeg_quality: 85          # JPEG encoding quality (0-100)
+
+models:
+  yolo:
+    model_path: "yolov8n.pt"  # Auto-downloaded if missing
+    confidence: 0.5
+    iou_threshold: 0.45
+    device: "auto"            # "auto", "cpu", or "cuda"
+  pose:
+    model_complexity: 1       # 0=lite, 1=full, 2=heavy
+    min_detection_confidence: 0.5
+    min_tracking_confidence: 0.5
+
+ptz:
+  smoothing_alpha: 0.15       # EMA alpha (lower = smoother, slower response)
+  crop_margin: 1.5            # Multiplier on bbox size for crop window
+  aspect_ratio: [16, 9]       # Output aspect ratio
+  min_zoom: 1.0               # Minimum zoom level
+  max_zoom: 4.0               # Maximum zoom level
+
+biomechanics:
+  smoothing_window: 5         # Rolling average window for velocities
+  torso_normalization: true   # Normalize speeds by torso length
+
+events:
+  lunge:
+    velocity_multiplier: 2.5  # Spike must exceed N x rolling baseline
+    baseline_window: 30       # Frames for rolling baseline
+    refractory_s: 1.5         # Cooldown between lunge detections
+  impact:
+    head_speed_threshold: 3.0 # Normalized head speed threshold
+    deceleration_frames: 5    # Frames to check for deceleration
+    refractory_s: 2.0
+  fencing_response:
+    window_after_impact_s: 2.0    # Time window after impact to watch
+    min_duration_s: 1.0           # Posture must be held this long
+    elbow_extended_deg: 150       # Extended arm threshold
+    elbow_flexed_deg: 90          # Flexed arm threshold
+    shoulder_level_tolerance_deg: 15  # Max shoulder tilt
+    refractory_s: 5.0
+
+grpc:
+  host: "127.0.0.1"
+  port: 50051

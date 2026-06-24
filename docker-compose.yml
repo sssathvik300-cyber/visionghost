@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - FENCEGUARD_API_KEY=${FENCEGUARD_API_KEY:-fenceguard-secure-demo-key-2026}
+      - FENCEGUARD_INTERNAL_TOKEN=${FENCEGUARD_INTERNAL_TOKEN:-internal-grpc-token}
+      - FENCEGUARD_HOST=0.0.0.0
+      - FENCEGUARD_PORT=8080
+      - FENCEGUARD_GRPC_HOST=cv-worker
+      - FENCEGUARD_GRPC_PORT=50051
+      - FENCEGUARD_MAX_UPLOAD_MB=200
+    depends_on:
+      - cv-worker
+    volumes:
+      - gateway_uploads:/app/uploads
+
+  cv-worker:
+    build:
+      context: .
+      dockerfile: cv-worker/Dockerfile
+    environment:
+      - FENCEGUARD_INTERNAL_TOKEN=${FENCEGUARD_INTERNAL_TOKEN:-internal-grpc-token}
+      - FENCEGUARD_GRPC_HOST=0.0.0.0
+      - FENCEGUARD_GRPC_PORT=50051
+      # Note: YOLO models are automatically downloaded into this container at runtime.
+    volumes:
+      # The gateway stores uploads at /app/uploads and passes that absolute
+      # path to the CV worker over gRPC. The worker must see the same files,
+      # so mount the shared volume here (read-only) at the identical path.
+      - gateway_uploads:/app/uploads:ro
+
+volumes:
+  gateway_uploads:

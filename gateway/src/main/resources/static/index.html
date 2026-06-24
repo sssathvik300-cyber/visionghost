@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FenceGuard Lite — Real-Time Fencing Motion & Head-Impact Monitor for TBI Research">
+    <title>FenceGuard Lite — Motion & Head-Impact Monitor</title>
+    <style>
+        /* ── Design System: Dark Clinical / Medical Instrument ── */
+        :root {
+            --bg-primary: #06080d;
+            --bg-card: rgba(12, 17, 30, 0.85);
+            --bg-card-hover: rgba(18, 24, 40, 0.9);
+            --bg-inset: rgba(8, 12, 22, 0.95);
+            --border-subtle: rgba(80, 100, 160, 0.12);
+            --border-accent: rgba(59, 130, 246, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --text-data: #a5f3fc;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #22d3ee;
+            --severity-low: #22c55e;
+            --severity-moderate: #eab308;
+            --severity-high: #f97316;
+            --severity-critical: #ef4444;
+            --font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+            --glass-blur: blur(12px);
+            --shadow-card: 0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-system);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Background gradient ── */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(34, 211, 238, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-subtle);
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .header-title .icon { font-size: 20px; }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--severity-low);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.disconnected { background: var(--text-muted); animation: none; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ── Connection Panel ── */
+        .connect-panel {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-inset);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .connect-panel input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            width: 180px;
+            outline: none;
+        }
+
+        .connect-panel input::placeholder { color: var(--text-muted); }
+
+        .btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn:hover { background: var(--bg-card-hover); border-color: var(--accent-blue); }
+        .btn-primary { background: var(--accent-blue); border-color: var(--accent-blue); color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-danger { border-color: var(--severity-critical); color: var(--severity-critical); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.15); }
+
+        /* ── Main Grid ── */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            grid-template-rows: auto auto auto;
+            gap: 16px;
+            padding: 16px 24px;
+            max-height: calc(100vh - 60px);
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius);
+            backdrop-filter: var(--glass-blur);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .card-body { padding: 16px; }
+
+        /* ── Video Area ── */
+        .video-area {
+            position: relative;
+            grid-row: 1 / 3;
+        }
+
+        .video-area canvas {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            background: #000;
+            display: block;
+        }
+
+        .inset-container {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            width: 200px;
+            border: 2px solid var(--accent-cyan);
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+        }
+
+        .inset-container canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .overlay-badge {
+            padding: 4px 10px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-data);
+            backdrop-filter: blur(8px);
+        }
+
+        /* ── Biomechanics Panel ── */
+        .bio-panel { grid-row: 1; }
+
+        .joint-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .joint-item {
+            padding: 10px 12px;
+            background: var(--bg-inset);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .joint-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .joint-value {
+            font-family: var(--font-mono);
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-data);
+        }
+
+        .joint-value .unit { font-size: 12px; color: var(--text-muted); }
+
+        /* ── Head Speed Chart ── */
+        .chart-container {
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--bg-inset);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .chart-container canvas {
+            width: 100%;
+            height: 120px;
+        }
+
+        /* ── Head Impact Risk Alert ── */
+        .impact-alert {
+            grid-column: 1 / -1;
+            display: none;
+            border: 2px solid var(--severity-critical);
+            animation: alertPulse 1.5s infinite;
+        }
+
+        .impact-alert.active { display: block; }
+
+        @keyframes alertPulse {
+            0%, 100% { border-color: var(--severity-critical); box-shadow: 0 0 20px rgba(239,68,68,0.2); }
+            50% { border-color: rgba(239,68,68,0.4); box-shadow: 0 0 40px rgba(239,68,68,0.1); }
+        }
+
+        .impact-alert-header {
+            padding: 12px 16px;
+            background: rgba(239, 68, 68, 0.1);
+            border-bottom: 1px solid rgba(239,68,68,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: var(--severity-critical);
+        }
+
+        .impact-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 12px 16px;
+        }
+
+        .impact-metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+        }
+
+        .impact-metric-label { color: var(--text-secondary); font-size: 13px; }
+        .impact-metric-value { font-family: var(--font-mono); font-weight: 600; color: var(--severity-critical); }
+
+        .impact-disclaimer {
+            padding: 8px 16px 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        /* ── Event Timeline ── */
+        .event-timeline {
+            grid-column: 1 / -1;
+        }
+
+        .event-list {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            max-height: 160px;
+            flex-wrap: wrap;
+        }
+
+        .event-card {
+            flex-shrink: 0;
+            padding: 10px 14px;
+            background: var(--bg-inset);
+            border-radius: 8px;
+            border-left: 3px solid;
+            min-width: 180px;
+            transition: transform 0.15s;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .event-card:hover { transform: translateY(-2px); }
+
+        .event-card.lunge { border-color: var(--severity-moderate); }
+        .event-card.impact { border-color: var(--severity-high); }
+        .event-card.fencing_response { border-color: var(--severity-critical); }
+
+        .event-type {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .event-card.lunge .event-type { color: var(--severity-moderate); }
+        .event-card.impact .event-type { color: var(--severity-high); }
+        .event-card.fencing_response .event-type { color: var(--severity-critical); }
+
+        .event-time {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .event-detail {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 6px;
+        }
+
+        .severity-badge.LOW { background: rgba(34,197,94,0.15); color: var(--severity-low); }
+        .severity-badge.MODERATE { background: rgba(234,179,8,0.15); color: var(--severity-moderate); }
+        .severity-badge.HIGH { background: rgba(249,115,22,0.15); color: var(--severity-high); }
+        .severity-badge.CRITICAL { background: rgba(239,68,68,0.15); color: var(--severity-critical); }
+
+        /* ── Footer ── */
+        .footer {
+            grid-column: 1 / -1;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius);
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .footer strong { color: var(--text-secondary); }
+
+        /* ── Upload Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius);
+            padding: 24px;
+            width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border-accent);
+            border-radius: 8px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .upload-zone:hover { border-color: var(--accent-blue); }
+        .upload-zone.dragover { border-color: var(--accent-cyan); background: rgba(34,211,238,0.05); }
+
+        .upload-zone input[type="file"] { display: none; }
+
+        .upload-icon { font-size: 36px; margin-bottom: 8px; }
+        .upload-text { color: var(--text-secondary); font-size: 14px; }
+        .upload-hint { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+
+        /* ── Empty state ── */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 300px;
+            color: var(--text-muted);
+            gap: 12px;
+        }
+
+        .empty-state .icon { font-size: 48px; opacity: 0.5; }
+        .empty-state p { font-size: 14px; }
+    </style>
+</head>
+<body>
+    <!-- ── Header ── -->
+    <header class="header">
+        <div class="header-title">
+            <span class="icon">⚔</span>
+            <span>FenceGuard Lite</span>
+            <span style="color: var(--text-muted); font-weight: 400; font-size: 13px;">
+                — Motion & Head-Impact Monitor
+            </span>
+        </div>
+        <div class="header-status">
+            <div class="connect-panel">
+                <input type="password" id="apiKeyInput" placeholder="API Key" autocomplete="off">
+                <button class="btn btn-primary" id="connectBtn">Connect</button>
+            </div>
+            <button class="btn" id="uploadBtn">📁 Upload Video</button>
+            <button class="btn btn-danger" id="stopBtn" style="display:none">⏹ Stop</button>
+            <div style="display:flex; align-items:center; gap: 6px;">
+                <div class="status-dot disconnected" id="statusDot"></div>
+                <span id="statusText">Disconnected</span>
+            </div>
+            <span id="fpsDisplay" class="overlay-badge" style="display:none">-- FPS</span>
+        </div>
+    </header>
+
+    <!-- ── Main Content ── -->
+    <div class="main-grid">
+        <!-- Video Area -->
+        <div class="card video-area" id="videoCard">
+            <canvas id="videoCanvas" width="960" height="540"></canvas>
+            <div class="video-overlay">
+                <span class="overlay-badge" id="zoomBadge">Zoom: 1.0×</span>
+                <span class="overlay-badge" id="confidenceBadge">-- conf</span>
+            </div>
+            <div class="inset-container" id="insetContainer" style="display:none">
+                <canvas id="insetCanvas" width="288" height="162"></canvas>
+            </div>
+            <div class="empty-state" id="emptyState">
+                <div class="icon">🤺</div>
+                <p>Upload a fencing video or start webcam to begin</p>
+                <p style="font-size:12px;">Autonomous PTZ tracking • Skeleton overlay • Head-impact monitoring</p>
+            </div>
+        </div>
+
+        <!-- Biomechanics Panel -->
+        <div class="card bio-panel">
+            <div class="card-header">
+                <h3>Biomechanics</h3>
+                <span style="font-size: 11px; color: var(--text-muted);">Clinical readout</span>
+            </div>
+            <div class="card-body">
+                <div class="joint-grid">
+                    <div class="joint-item">
+                        <div class="joint-label">L. Elbow</div>
+                        <div class="joint-value" id="leftElbow">--<span class="unit">°</span></div>
+                    </div>
+                    <div class="joint-item">
+                        <div class="joint-label">R. Elbow</div>
+                        <div class="joint-value" id="rightElbow">--<span class="unit">°</span></div>
+                    </div>
+                    <div class="joint-item">
+                        <div class="joint-label">L. Knee</div>
+                        <div class="joint-value" id="leftKnee">--<span class="unit">°</span></div>
+                    </div>
+                    <div class="joint-item">
+                        <div class="joint-label">R. Knee</div>
+                        <div class="joint-value" id="rightKnee">--<span class="unit">°</span></div>
+                    </div>
+                    <div class="joint-item" style="grid-column: 1 / -1;">
+                        <div class="joint-label">Torso Lean</div>
+                        <div class="joint-value" id="torsoLean">--<span class="unit">°</span></div>
+                    </div>
+                </div>
+
+                <!-- Head Speed Chart -->
+                <div class="chart-container">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span class="joint-label">Head Speed (normalized)</span>
+                        <span class="joint-label" id="headSpeedValue" style="color: var(--text-data);">0.00</span>
+                    </div>
+                    <canvas id="headSpeedChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Head Impact Risk Alert -->
+        <div class="card impact-alert" id="impactAlert">
+            <div class="impact-alert-header">
+                <span>⚠</span>
+                <span>HEAD IMPACT RISK DETECTED</span>
+            </div>
+            <div class="impact-metrics" id="impactMetrics">
+                <div class="impact-metric">
+                    <span class="impact-metric-label">Head Speed</span>
+                    <span class="impact-metric-value" id="impactHeadSpeed">--× baseline</span>
+                </div>
+                <div class="impact-metric">
+                    <span class="impact-metric-label">Direction Change Rate</span>
+                    <span class="impact-metric-value" id="impactDirChange">--</span>
+                </div>
+                <div class="impact-metric">
+                    <span class="impact-metric-label">Posture Duration</span>
+                    <span class="impact-metric-value" id="impactDuration">--s</span>
+                </div>
+                <div class="impact-metric">
+                    <span class="impact-metric-label">Pre-Impact Speed</span>
+                    <span class="impact-metric-value" id="impactPreSpeed">-- n.u.</span>
+                </div>
+            </div>
+            <div class="impact-disclaimer">
+                ⓘ Unvalidated heuristic — research prototype only. Not a clinical diagnosis.
+                Video-based kinematics cannot measure true peak head acceleration.
+            </div>
+        </div>
+
+        <!-- Event Timeline -->
+        <div class="card event-timeline">
+            <div class="card-header">
+                <h3>Event Timeline</h3>
+                <span style="font-size: 11px; color: var(--text-muted);" id="eventCount">0 events</span>
+            </div>
+            <div class="card-body">
+                <div class="event-list" id="eventList">
+                    <div style="color: var(--text-muted); font-size: 13px; padding: 12px;">
+                        Events will appear here during tracking...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Methods & Limitations Footer -->
+        <div class="footer">
+            <strong>ⓘ Methods & Limitations:</strong>
+            Head speed values are relative (px/s normalized by torso length), not validated g-force, HIC, or BrIC measurements.
+            Video at webcam frame rates (30–60 fps) cannot measure peak head acceleration — the ~1–10 kHz impact pulse
+            that validated biomechanical sensors capture is undersampled by orders of magnitude.
+            The fencing-response detector is an <strong>unvalidated heuristic prototype</strong> for screening/exposure monitoring only.
+            Clinical concussion assessment requires validated tools (SCAT5, King-Devick) and instrumented sensors.
+            See METHODS.md for full discussion.
+        </div>
+    </div>
+
+    <!-- ── Upload Modal ── -->
+    <div class="modal-overlay" id="uploadModal">
+        <div class="modal">
+            <h2>📁 Upload Fencing Video</h2>
+            <div class="upload-zone" id="uploadZone">
+                <input type="file" id="fileInput" accept=".mp4,.mov,.avi,.mkv">
+                <div class="upload-icon">📹</div>
+                <div class="upload-text">Click or drag a video file here</div>
+                <div class="upload-hint">Accepted: .mp4, .mov, .avi, .mkv (max 200MB)</div>
+            </div>
+            <div id="uploadProgress" style="display:none; margin-top: 16px;">
+                <div style="height: 4px; background: var(--bg-inset); border-radius: 2px; overflow: hidden;">
+                    <div id="progressBar" style="height: 100%; width: 0%; background: var(--accent-blue); transition: width 0.3s;"></div>
+                </div>
+                <div id="uploadStatus" style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">Uploading...</div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end;">
+                <button class="btn" id="cancelUploadBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
