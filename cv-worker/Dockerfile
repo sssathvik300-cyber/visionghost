@@ -12,7 +12,7 @@ WORKDIR /app
 RUN chown fenceguard:fenceguard /app
 
 # Copy requirements
-COPY cv-worker/requirements.txt /app/cv-worker/
+COPY --chown=fenceguard:fenceguard cv-worker/requirements.txt /app/cv-worker/
 
 # Install python dependencies globally as root
 RUN pip install --no-cache-dir -r /app/cv-worker/requirements.txt

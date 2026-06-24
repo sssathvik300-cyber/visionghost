@@ -59,7 +59,7 @@ public class SecurityConfig {
                         .contentSecurityPolicy(csp ->
                                 csp.policyDirectives(
                                         "default-src 'self'; " +
-                                        "connect-src 'self' ws://127.0.0.1:* ws://localhost:*; " +
+                                        "connect-src 'self' ws://127.0.0.1:* ws://localhost:* wss://*; " +
                                         "style-src 'self' 'unsafe-inline'; " +
                                         "img-src 'self' data: blob:; " +
                                         "font-src 'self'; " +
@@ -82,8 +82,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        String origin = "http://127.0.0.1:" + appProperties.port();
-        config.setAllowedOrigins(List.of(origin, "http://localhost:" + appProperties.port()));
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
         config.setAllowedHeaders(List.of("X-API-Key", "Content-Type"));
         config.setAllowCredentials(true);
