@@ -1,5 +1,4 @@
 # FenceGuard Lite — Python CV Worker Dependencies
-# Unpinned for compatibility with newer Python versions
 
 # gRPC
 grpcio
@@ -8,10 +7,12 @@ protobuf
 
 # Computer Vision
 ultralytics
-mediapipe
+# Pinned: mediapipe >=0.10.35 removed the legacy mp.solutions API
+# that pose.py depends on. 0.10.14 still ships it and works on Python 3.11 + numpy<2
+mediapipe==0.10.14
 opencv-python-headless
 
-# Numeric (mediapipe often has issues with numpy 2.0+)
+# Numeric (mediapipe has issues with numpy 2.0+)
 numpy<2.0.0
 
 # Configuration
